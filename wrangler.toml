@@ -1,0 +1,17 @@
+# Cloudflare Pages configuration.
+# The app is a pure static SPA (no server code), so we only need to point
+# Pages at the built output. Deploy directly with:
+#
+#   bun run deploy            # build + wrangler pages deploy
+#
+# or connect the Git repo in the Cloudflare dashboard with:
+#
+#   Build command:   bun run fetch-compiler && bun run build
+#   Output dir:      dist
+#
+# Note: `fetch-compiler` must run in the build (it downloads the Gleam WASM
+# compiler + stdlib into dist), because those artifacts are gitignored.
+
+name = "gleam-playground"
+compatibility_date = "2025-07-08"
+pages_build_output_dir = "dist"

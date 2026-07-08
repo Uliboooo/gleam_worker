@@ -1,0 +1,19 @@
+# Cloudflare Pages headers. Cloudflare already serves .wasm as
+# application/wasm and .mjs as text/javascript, so we only tune caching.
+
+# Vite emits content-hashed filenames under /assets — safe to cache forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Compiler artifacts have stable (unhashed) names but change rarely.
+# Cache for a day; the service worker provides offline access regardless.
+/wasm/*
+  Cache-Control: public, max-age=86400
+/precompiled/*
+  Cache-Control: public, max-age=86400
+/stdlib/*
+  Cache-Control: public, max-age=86400
+
+# The service worker must always be revalidated so updates roll out promptly.
+/sw.js
+  Cache-Control: no-cache

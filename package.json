@@ -8,9 +8,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test test/*.test.ts",
-    "fetch-compiler": "node scripts/fetch-compiler.mjs",
-    "make-icons": "node scripts/make-icons.mjs"
+    "test": "bun test test/",
+    "fetch-compiler": "bun scripts/fetch-compiler.mjs",
+    "make-icons": "bun scripts/make-icons.mjs",
+    "deploy": "bun run fetch-compiler && bun run build && wrangler pages deploy dist"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.0.0",
@@ -25,6 +26,7 @@
     "@types/node": "^26.1.1",
     "tar": "^7.0.0",
     "typescript": "^5.5.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "wrangler": "^4.0.0"
   }
 }

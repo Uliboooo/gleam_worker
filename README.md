@@ -9,22 +9,24 @@
 
 ## セットアップ
 
+[Bun](https://bun.sh) を使います。
+
 ```sh
-npm install
+bun install
 
 # Gleam WASM コンパイラと stdlib を取得・プリコンパイル(要インターネット接続)
-npm run fetch-compiler
+bun run fetch-compiler
 
-npm run dev      # 開発サーバー
-npm run build    # 本番ビルド (dist/)
-npm run test     # ユニットテスト
+bun run dev      # 開発サーバー
+bun run build    # 本番ビルド (dist/)
+bun run test     # ユニットテスト
 ```
 
 > **Note**: `public/wasm/`・`public/stdlib/`・`public/precompiled/` は
-> `npm run fetch-compiler` が生成します(リポジトリにはコミットしません)。
+> `bun run fetch-compiler` が生成します(リポジトリにはコミットしません)。
 > 生成前でもアプリは起動しますが、実行ボタンは「実行不可」となり
 > エラータブに案内が表示されます。
-> バージョン指定は `GLEAM_VERSION=1.11.1 npm run fetch-compiler` のように行います。
+> バージョン指定は `GLEAM_VERSION=1.11.1 bun run fetch-compiler` のように行います。
 
 ## アーキテクチャ
 
@@ -65,10 +67,38 @@ Runner (src/runner/) — module Worker
 | `scripts/fetch-compiler.mjs` | コンパイラ・stdlib の取得とプリコンパイル |
 | `scripts/make-icons.mjs` | PWA アイコン生成(Node 標準ライブラリのみ) |
 
-## 配信
+## 配信 (Cloudflare Pages)
 
-`dist/` を任意の静的ホスティング (CDN) に置くだけで動作します。
-`.wasm` に `application/wasm`、`.mjs` に `text/javascript` の MIME タイプが付くことを確認してください。
+純粋な静的 SPA(サーバーコードなし)なので、`dist/` を静的ホスティングに置くだけで動きます。
+`wrangler.toml` を用意してあり、Cloudflare Pages にそのままデプロイできます。
+
+### 方法 A: 直接アップロード
+
+```sh
+bun run deploy    # fetch-compiler → build → wrangler pages deploy dist
+```
+
+初回は Cloudflare へのログイン (`bunx wrangler login`) が必要です。
+
+### 方法 B: Git 連携(ダッシュボードで設定)
+
+| 項目 | 値 |
+|---|---|
+| Build command | `bun run fetch-compiler && bun run build` |
+| Build output directory | `dist` |
+
+> **重要**: コンパイラ一式 (`public/wasm`・`public/precompiled`) は gitignore しているため、
+> **ビルド時に必ず `fetch-compiler` を実行**して `dist/` に同梱する必要があります
+> (上記のビルドコマンドに含めてあります)。ビルド環境から github.com / hex.pm へ
+> アクセスできることが前提です。
+
+`.wasm` / `.mjs` の MIME タイプは Cloudflare が自動付与します。
+キャッシュ制御は `public/_headers` で調整済み(ハッシュ付きアセットは immutable、
+コンパイラ一式は 1 日、`sw.js` は毎回再検証)。
+
+他のホスティング(GitHub Pages / Netlify / Vercel など)でも `dist/` を置けば動作します。
+その場合は `.wasm` に `application/wasm`、`.mjs` に `text/javascript` が付くことを確認してください。
+サブパス配信(`example.com/app/` など)にする場合は Vite の `base` 設定と絶対パスの調整が別途必要です。
 
 ## スコープ外 (v1)
 
