@@ -1,0 +1,30 @@
+{
+  "name": "gleam-playground",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Mobile-first Gleam playground: compile and run Gleam in the browser via WASM.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "fetch-compiler": "node scripts/fetch-compiler.mjs",
+    "make-icons": "node scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.0.0",
+    "@codemirror/commands": "^6.0.0",
+    "@codemirror/language": "^6.0.0",
+    "@codemirror/lint": "^6.0.0",
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
+    "@lezer/highlight": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tar": "^7.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^6.0.0"
+  }
+}

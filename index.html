@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffaff3" />
+    <meta
+      name="description"
+      content="スマホのブラウザだけで Gleam を書いて実行できるプレイグラウンド。コンパイルは端末内 WASM で完結、コードが外部に送信されることはありません。"
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <title>Gleam Playground</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="header">
+        <h1 class="header-title"><span class="header-star" aria-hidden="true">★</span>Gleam Playground</h1>
+        <button id="menu-button" class="icon-button" aria-label="メニュー">⋯</button>
+      </header>
+
+      <main id="panes" class="panes">
+        <section id="editor-pane" class="editor-pane" aria-label="エディタ"></section>
+        <div
+          id="divider"
+          class="divider"
+          role="separator"
+          aria-label="ペイン比率の変更"
+          tabindex="0"
+        >
+          <span class="divider-grip" aria-hidden="true"></span>
+        </div>
+        <section id="output-pane" class="output-pane" aria-label="出力">
+          <div class="output-tabs" role="tablist">
+            <button class="output-tab is-active" role="tab" aria-selected="true" data-tab="result">実行結果</button>
+            <button class="output-tab" role="tab" aria-selected="false" data-tab="errors">エラー<span id="error-badge" class="tab-badge" hidden></span></button>
+            <button class="output-tab" role="tab" aria-selected="false" data-tab="js">生成JS</button>
+          </div>
+          <div id="tab-result" class="output-body" role="tabpanel" data-tab="result"></div>
+          <div id="tab-errors" class="output-body" role="tabpanel" data-tab="errors" hidden></div>
+          <div id="tab-js" class="output-body" role="tabpanel" data-tab="js" hidden></div>
+        </section>
+      </main>
+
+      <div id="kbd-toolbar" class="kbd-toolbar" hidden></div>
+
+      <nav class="bottom-bar" aria-label="操作">
+        <button id="run-button" class="run-button" disabled>
+          <span class="run-icon" aria-hidden="true">▶</span><span id="run-label">読み込み中…</span>
+        </button>
+        <button id="share-button" class="bar-button">共有</button>
+        <button id="samples-button" class="bar-button">例</button>
+      </nav>
+    </div>
+
+    <div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
+    <div id="bottom-sheet" class="bottom-sheet" role="dialog" aria-modal="true" hidden></div>
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
