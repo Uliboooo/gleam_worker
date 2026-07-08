@@ -50,20 +50,30 @@ export class CompilerService {
   }
 
   private async doInit(): Promise<void> {
-    const [jsHead, sourcesResponse] = await Promise.all([
-      fetch("/wasm/gleam_wasm.js", { method: "HEAD" }),
+    const [glueResponse, sourcesResponse] = await Promise.all([
+      fetch("/wasm/gleam_wasm.js"),
       fetch("/stdlib/sources.json"),
     ]);
-    // SPA hosting serves index.html for missing files, so check types, not just status.
-    const jsType = jsHead.headers.get("content-type") ?? "";
-    const jsonType = sourcesResponse.headers.get("content-type") ?? "";
-    if (!jsHead.ok || !sourcesResponse.ok || !jsType.includes("javascript") || !jsonType.includes("json")) {
-      throw new CompilerMissingError();
+    if (!glueResponse.ok || !sourcesResponse.ok) throw new CompilerMissingError();
+
+    const glueSource = await glueResponse.text();
+    // SPA hosts serve index.html for missing files; reject that instead of eval'ing HTML.
+    if (/^\s*</.test(glueSource)) throw new CompilerMissingError();
+
+    // The wasm-bindgen glue lives in /public, which Vite refuses to let source
+    // code import directly. Load it through a Blob URL so it bypasses the
+    // bundler entirely (works identically in dev and on static hosting).
+    const blobUrl = URL.createObjectURL(new Blob([glueSource], { type: "text/javascript" }));
+    let wasm: GleamWasm;
+    try {
+      wasm = await import(/* @vite-ignore */ blobUrl);
+    } finally {
+      URL.revokeObjectURL(blobUrl);
     }
 
-    const wasmUrl = "/wasm/gleam_wasm.js";
-    const wasm: GleamWasm = await import(/* @vite-ignore */ wasmUrl);
-    await wasm.default("/wasm/gleam_wasm_bg.wasm");
+    // Pass the module as bytes so init never relies on the Blob's import.meta.url.
+    const wasmBytes = await (await fetch("/wasm/gleam_wasm_bg.wasm")).arrayBuffer();
+    await wasm.default(wasmBytes);
     wasm.initialise_panic_hook(false);
 
     const sources: Record<string, string> = await sourcesResponse.json();
