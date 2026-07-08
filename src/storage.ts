@@ -4,6 +4,8 @@ const SETTINGS_KEY = "gleam-playground.settings";
 export interface Settings {
   fontSize: number;
   theme: "light" | "dark" | "system";
+  /** Vim keybindings in the editor. */
+  vim: boolean;
   /** Editor pane share, 0–1, portrait layout. */
   splitPortrait: number;
   /** Editor pane share, 0–1, landscape layout. */
@@ -13,6 +15,7 @@ export interface Settings {
 export const defaultSettings: Settings = {
   fontSize: 14,
   theme: "system",
+  vim: false,
   splitPortrait: 0.6,
   splitLandscape: 0.6,
 };

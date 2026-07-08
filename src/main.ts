@@ -38,6 +38,8 @@ async function start(): Promise<void> {
   const editor = createEditor(editorPane, initialCode, {
     fontSize: settings.fontSize,
     dark: isDark(),
+    vim: settings.vim,
+    getModuleSymbols: () => compiler.getModuleSymbols(),
     onChange(code) {
       autoSave(code);
       autoCompile();
@@ -221,6 +223,22 @@ async function start(): Promise<void> {
         },
       );
       root.append(sizeRow);
+
+      root.append(
+        sheetSegmentedRow(
+          "Vim キーバインド",
+          [
+            { value: "off", label: "オフ" },
+            { value: "on", label: "オン" },
+          ],
+          settings.vim ? "on" : "off",
+          (value) => {
+            settings.vim = value === "on";
+            editor.setVim(settings.vim);
+            persistSettings();
+          },
+        ),
+      );
 
       const about = document.createElement("div");
       about.className = "sheet-title";

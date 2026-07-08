@@ -1,4 +1,5 @@
 import { parseDiagnostics, rewriteImports, type GleamDiagnostic } from "../lib/rewrite.ts";
+import { parseModuleSymbols, type GleamSymbol } from "../editor/symbols.ts";
 
 /**
  * Wrapper around the official Gleam compiler compiled to WASM
@@ -25,7 +26,7 @@ export type CompileResult =
 export class CompilerMissingError extends Error {
   constructor() {
     super(
-      "コンパイラ (WASM) が見つかりません。開発者向け: `npm run fetch-compiler` を実行して " +
+      "コンパイラ (WASM) が見つかりません。開発者向け: `bun run fetch-compiler` を実行して " +
         "public/wasm・public/stdlib・public/precompiled を生成してください。",
     );
   }
@@ -38,6 +39,7 @@ const PRECOMPILED_BASE = "/precompiled/";
 export class CompilerService {
   private wasm: GleamWasm | null = null;
   private initPromise: Promise<void> | null = null;
+  private moduleSymbols = new Map<string, GleamSymbol[]>();
 
   /** Lazily loads the WASM compiler and writes the stdlib sources into its filesystem. */
   init(): Promise<void> {
@@ -47,6 +49,11 @@ export class CompilerService {
 
   get ready(): boolean {
     return this.wasm !== null;
+  }
+
+  /** Public symbols per stdlib module, for editor autocompletion. Empty until init resolves. */
+  getModuleSymbols(): Map<string, GleamSymbol[]> {
+    return this.moduleSymbols;
   }
 
   private async doInit(): Promise<void> {
@@ -80,6 +87,7 @@ export class CompilerService {
     for (const [name, code] of Object.entries(sources)) {
       wasm.write_module(PROJECT_ID, name, code);
     }
+    this.moduleSymbols = parseModuleSymbols(sources);
     this.wasm = wasm;
 
     // Warm-up compile so the first user-triggered compile is fast.

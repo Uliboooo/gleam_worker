@@ -16,10 +16,17 @@ import {
   HighlightStyle,
   indentUnit,
 } from "@codemirror/language";
-import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import {
+  closeBrackets,
+  closeBracketsKeymap,
+  autocompletion,
+  completionKeymap,
+} from "@codemirror/autocomplete";
 import { setDiagnostics, type Diagnostic } from "@codemirror/lint";
 import { tags } from "@lezer/highlight";
 import { gleam } from "./gleam-language.ts";
+import { gleamCompletionSource } from "./completion.ts";
+import type { GleamSymbol } from "./symbols.ts";
 import type { GleamDiagnostic } from "../lib/rewrite.ts";
 
 const darkHighlight = HighlightStyle.define([
@@ -50,6 +57,12 @@ const themeCompartment = new Compartment();
 const fontTheme = (size: number) =>
   EditorView.theme({ "&": { fontSize: `${size}px` } });
 const fontCompartment = new Compartment();
+// Vim must sit at the top of the extension list to take keymap precedence,
+// so it gets its own compartment placed first. The mode is loaded lazily so
+// the ~50 KB (gzip) dependency stays out of the initial bundle.
+const vimCompartment = new Compartment();
+let vimModule: Promise<typeof import("@replit/codemirror-vim")> | null = null;
+const loadVim = () => (vimModule ??= import("@replit/codemirror-vim"));
 
 export interface Editor {
   view: EditorView;
@@ -58,6 +71,7 @@ export interface Editor {
   insertSnippet(text: string, cursorOffset?: number): void;
   setDark(dark: boolean): void;
   setFontSize(size: number): void;
+  setVim(enabled: boolean): void;
   setGleamDiagnostics(diagnostics: GleamDiagnostic[]): void;
   jumpToLine(line: number, column?: number): void;
 }
@@ -65,11 +79,19 @@ export interface Editor {
 export function createEditor(
   parent: HTMLElement,
   initialCode: string,
-  options: { fontSize: number; dark: boolean; onChange: (code: string) => void; onFocusChange: (focused: boolean) => void },
+  options: {
+    fontSize: number;
+    dark: boolean;
+    vim: boolean;
+    getModuleSymbols: () => Map<string, GleamSymbol[]>;
+    onChange: (code: string) => void;
+    onFocusChange: (focused: boolean) => void;
+  },
 ): Editor {
   const state = EditorState.create({
     doc: initialCode,
     extensions: [
+      vimCompartment.of([]),
       lineNumbers(),
       history(),
       drawSelection(),
@@ -79,10 +101,15 @@ export function createEditor(
       indentUnit.of("  "),
       bracketMatching(),
       closeBrackets(),
+      autocompletion({
+        override: [gleamCompletionSource(options.getModuleSymbols)],
+        activateOnTyping: true,
+        icons: true,
+      }),
       gleam,
       themeCompartment.of(options.dark ? [darkTheme, syntaxHighlighting(darkHighlight)] : syntaxHighlighting(defaultHighlightStyle)),
       fontCompartment.of(fontTheme(options.fontSize)),
-      keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+      keymap.of([...closeBracketsKeymap, ...completionKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
       EditorView.lineWrapping,
       EditorView.updateListener.of((update) => {
         if (update.docChanged) options.onChange(update.state.doc.toString());
@@ -93,7 +120,7 @@ export function createEditor(
 
   const view = new EditorView({ state, parent });
 
-  return {
+  const editor: Editor = {
     view,
     getCode: () => view.state.doc.toString(),
     setCode(code) {
@@ -118,6 +145,15 @@ export function createEditor(
     },
     setFontSize(size) {
       view.dispatch({ effects: fontCompartment.reconfigure(fontTheme(size)) });
+    },
+    setVim(enabled) {
+      if (!enabled) {
+        view.dispatch({ effects: vimCompartment.reconfigure([]) });
+        return;
+      }
+      void loadVim().then(({ vim }) => {
+        view.dispatch({ effects: vimCompartment.reconfigure(vim()) });
+      });
     },
     setGleamDiagnostics(diagnostics) {
       const doc = view.state.doc;
@@ -144,6 +180,9 @@ export function createEditor(
       view.focus();
     },
   };
+
+  if (options.vim) editor.setVim(true);
+  return editor;
 }
 
 function firstSentence(diagnostic: string): string {
