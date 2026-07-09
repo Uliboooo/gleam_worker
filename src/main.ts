@@ -1,14 +1,31 @@
 import "./app.css";
 import { createEditor } from "./editor/editor.ts";
-import { CompilerService, CompilerMissingError, type CompileResult } from "./compiler/service.ts";
+import {
+  CompilerService,
+  CompilerMissingError,
+  type CompileResult,
+} from "./compiler/service.ts";
 import { run, type RunHandle } from "./runner/runner.ts";
 import { createOutputPanel } from "./ui/output.ts";
 import { setupSplit } from "./ui/split.ts";
 import { setupKeyboardToolbar } from "./ui/toolbar.ts";
-import { openSheet, closeSheet, sheetTitle, sheetItem, sheetSegmentedRow } from "./ui/sheet.ts";
+import {
+  openSheet,
+  closeSheet,
+  sheetTitle,
+  sheetItem,
+  sheetSegmentedRow,
+} from "./ui/sheet.ts";
 import { shareCode, codeFromHash } from "./share.ts";
 import { samples, DEFAULT_CODE } from "./samples.ts";
-import { loadCode, saveCode, loadSettings, saveSettings, debounce, type Settings } from "./storage.ts";
+import {
+  loadCode,
+  saveCode,
+  loadSettings,
+  saveSettings,
+  debounce,
+  type Settings,
+} from "./storage.ts";
 import { applyTheme, isDark, onThemeChange } from "./theme.ts";
 import { setupPwa } from "./pwa.ts";
 import type { GleamDiagnostic } from "./lib/rewrite.ts";
@@ -22,7 +39,9 @@ async function start(): Promise<void> {
   const persistSettings = debounce(() => saveSettings(settings), 300);
 
   // ---- Output panel ----
-  const output = createOutputPanel((line, column) => editor.jumpToLine(line, column));
+  const output = createOutputPanel((line, column) =>
+    editor.jumpToLine(line, column),
+  );
   output.setResultPlaceholder("▶実行 を押すと結果がここに表示されます");
   output.setDiagnostics([]);
   output.setGeneratedJs(null);
@@ -55,8 +74,14 @@ async function start(): Promise<void> {
     insertSnippet: (text, cursor) => editor.insertSnippet(text, cursor),
     moveCursor(delta) {
       const head = editor.view.state.selection.main.head;
-      const pos = Math.max(0, Math.min(editor.view.state.doc.length, head + delta));
-      editor.view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+      const pos = Math.max(
+        0,
+        Math.min(editor.view.state.doc.length, head + delta),
+      );
+      editor.view.dispatch({
+        selection: { anchor: pos },
+        scrollIntoView: true,
+      });
       editor.view.focus();
     },
     focusEditor: () => editor.view.focus(),
@@ -64,7 +89,8 @@ async function start(): Promise<void> {
 
   // ---- Split panes ----
   setupSplit({
-    getRatio: (landscape) => (landscape ? settings.splitLandscape : settings.splitPortrait),
+    getRatio: (landscape) =>
+      landscape ? settings.splitLandscape : settings.splitPortrait,
     setRatio(landscape, ratio) {
       if (landscape) settings.splitLandscape = ratio;
       else settings.splitPortrait = ratio;
@@ -98,7 +124,9 @@ async function start(): Promise<void> {
     });
 
   function applyDiagnostics(result: CompileResult): GleamDiagnostic[] {
-    const diagnostics = result.ok ? result.warnings : [...result.errors, ...result.warnings];
+    const diagnostics = result.ok
+      ? result.warnings
+      : [...result.errors, ...result.warnings];
     editor.setGleamDiagnostics(diagnostics);
     output.setDiagnostics(diagnostics);
     output.setGeneratedJs(result.ok ? result.rawJs : null);
@@ -160,7 +188,11 @@ async function start(): Promise<void> {
       currentRun = null;
       runButton.classList.remove("is-running");
       runButton.disabled = compilerFailed;
-      runLabel.textContent = compilerFailed ? "実行不可" : compiler.ready ? "実行" : "読み込み中…";
+      runLabel.textContent = compilerFailed
+        ? "実行不可"
+        : compiler.ready
+          ? "実行"
+          : "読み込み中…";
     }
   }
 
@@ -216,9 +248,13 @@ async function start(): Promise<void> {
         ],
         "" as never,
         (dir) => {
-          settings.fontSize = Math.min(24, Math.max(10, settings.fontSize + (dir === "larger" ? 1 : -1)));
+          settings.fontSize = Math.min(
+            24,
+            Math.max(10, settings.fontSize + (dir === "larger" ? 1 : -1)),
+          );
           editor.setFontSize(settings.fontSize);
-          sizeRow.querySelector(".sheet-row-label")!.textContent = `フォントサイズ (${settings.fontSize}px)`;
+          sizeRow.querySelector(".sheet-row-label")!.textContent =
+            `フォントサイズ (${settings.fontSize}px)`;
           persistSettings();
         },
       );
